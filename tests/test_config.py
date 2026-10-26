@@ -3,57 +3,57 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from purchase_intention.config import Configuracoes
+from purchase_intention.config import Settings
 
-VARIAVEIS_DE_AMBIENTE = (
+SETTINGS_ENV_VARS = (
     "MLFLOW_TRACKING_URI",
     "MLFLOW_EXPERIMENT_NAME",
-    "NOME_MODELO_REGISTRADO",
-    "NIVEL_LOG",
+    "MLFLOW_REGISTERED_MODEL_NAME",
+    "LOG_LEVEL",
 )
 
 
 @pytest.fixture(autouse=True)
-def limpar_ambiente(monkeypatch: pytest.MonkeyPatch) -> None:
+def clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     # Remove variáveis que possam existir na máquina, para que cada teste
     # parta de um ambiente conhecido.
-    for nome in VARIAVEIS_DE_AMBIENTE:
-        monkeypatch.delenv(nome, raising=False)
+    for name in SETTINGS_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
 
 
-def test_usa_valores_padrao_sem_arquivo_env() -> None:
+def test_defaults_are_used_without_env_file() -> None:
     # _env_file=None ignora um eventual .env local do desenvolvedor.
-    configuracoes = Configuracoes(_env_file=None)
+    settings = Settings(_env_file=None)
 
-    assert configuracoes.uri_rastreamento_mlflow == "sqlite:///mlflow.db"
-    assert configuracoes.nome_experimento == "intencao-de-compra"
-    assert configuracoes.nome_modelo_registrado == "classificador-intencao-de-compra"
-    assert configuracoes.nivel_log == "INFO"
+    assert settings.mlflow_tracking_uri == "sqlite:///mlflow.db"
+    assert settings.mlflow_experiment_name == "purchase-intention"
+    assert settings.mlflow_registered_model_name == "purchase-intention-classifier"
+    assert settings.log_level == "INFO"
 
 
-def test_variaveis_de_ambiente_sobrescrevem_padroes(
+def test_environment_variables_override_defaults(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("MLFLOW_TRACKING_URI", "http://mlflow-server:5000")
-    monkeypatch.setenv("NIVEL_LOG", "DEBUG")
+    monkeypatch.setenv("LOG_LEVEL", "DEBUG")
 
-    configuracoes = Configuracoes(_env_file=None)
+    settings = Settings(_env_file=None)
 
-    assert configuracoes.uri_rastreamento_mlflow == "http://mlflow-server:5000"
-    assert configuracoes.nivel_log == "DEBUG"
-
-
-def test_carrega_valores_do_arquivo_env(tmp_path: Path) -> None:
-    arquivo_env = tmp_path / ".env"
-    arquivo_env.write_text("MLFLOW_EXPERIMENT_NAME=vindo-do-env\n", encoding="utf-8")
-
-    configuracoes = Configuracoes(_env_file=arquivo_env)
-
-    assert configuracoes.nome_experimento == "vindo-do-env"
+    assert settings.mlflow_tracking_uri == "http://mlflow-server:5000"
+    assert settings.log_level == "DEBUG"
 
 
-def test_rejeita_nivel_de_log_invalido(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("NIVEL_LOG", "DETALHADO")
+def test_env_file_values_are_loaded(tmp_path: Path) -> None:
+    env_file = tmp_path / ".env"
+    env_file.write_text("MLFLOW_EXPERIMENT_NAME=from-env-file\n", encoding="utf-8")
+
+    settings = Settings(_env_file=env_file)
+
+    assert settings.mlflow_experiment_name == "from-env-file"
+
+
+def test_invalid_log_level_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LOG_LEVEL", "VERBOSE")
 
     with pytest.raises(ValidationError):
-        Configuracoes(_env_file=None)
+        Settings(_env_file=None)

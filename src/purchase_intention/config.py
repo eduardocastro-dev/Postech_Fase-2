@@ -8,16 +8,16 @@ que o DVC consiga rastreá-los e reexecutar o pipeline quando mudarem.
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-NivelLog = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 
-class Configuracoes(BaseSettings):
+class Settings(BaseSettings):
     """Configurações que mudam entre ambientes (máquina local, Docker).
 
     Ordem de prioridade: variável de ambiente > arquivo ``.env`` > valor padrão.
+    Cada campo é lido da variável de ambiente com o mesmo nome em maiúsculas.
     """
 
     model_config = SettingsConfigDict(
@@ -26,25 +26,16 @@ class Configuracoes(BaseSettings):
         extra="ignore",
     )
 
-    # As duas primeiras variáveis mantêm o nome oficial do MLflow, que também
-    # as lê diretamente. Assim a mesma configuração vale para o nosso código
-    # e para a própria biblioteca.
-    uri_rastreamento_mlflow: str = Field(
-        default="sqlite:///mlflow.db",
-        validation_alias="MLFLOW_TRACKING_URI",
-    )
-    nome_experimento: str = Field(
-        default="intencao-de-compra",
-        validation_alias="MLFLOW_EXPERIMENT_NAME",
-    )
-    nome_modelo_registrado: str = Field(
-        default="classificador-intencao-de-compra",
-        validation_alias="NOME_MODELO_REGISTRADO",
-    )
-    nivel_log: NivelLog = Field(default="INFO", validation_alias="NIVEL_LOG")
+    # MLFLOW_TRACKING_URI e MLFLOW_EXPERIMENT_NAME são nomes oficiais do MLflow,
+    # que também os lê diretamente: a mesma configuração vale para o nosso
+    # código e para a própria biblioteca.
+    mlflow_tracking_uri: str = "sqlite:///mlflow.db"
+    mlflow_experiment_name: str = "purchase-intention"
+    mlflow_registered_model_name: str = "purchase-intention-classifier"
+    log_level: LogLevel = "INFO"
 
 
 @lru_cache
-def obter_configuracoes() -> Configuracoes:
+def get_settings() -> Settings:
     """Retorna as configurações da aplicação, carregadas uma única vez por processo."""
-    return Configuracoes()
+    return Settings()

@@ -55,5 +55,12 @@ poetry run pytest
 | `.env` | Infraestrutura que varia por ambiente (URI do MLflow, nomes de experimento e modelo, nível de log) |
 | `configs/params.yaml` | Parâmetros de experimento (seeds, split, hiperparâmetros), rastreados pelo DVC |
 
-As variáveis `MLFLOW_TRACKING_URI` e `MLFLOW_EXPERIMENT_NAME` mantêm o nome
-oficial do MLflow, que também as lê diretamente.
+As variáveis `MLFLOW_TRACKING_URI` e `MLFLOW_EXPERIMENT_NAME` são nomes
+oficiais do MLflow, que também as lê diretamente.
+
+## Convenções do código
+
+| Elemento | Idioma |
+| --- | --- |
+| Pastas, arquivos, variáveis, funções, classes | Inglês |
+| Comentários e docstrings | Português |
