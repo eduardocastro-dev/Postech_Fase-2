@@ -1,0 +1,57 @@
+[project]
+name = "purchase-intention-prediction"
+version = "0.1.0"
+description = "Pipeline de ML de ponta a ponta para prever a intenção de compra em um e-commerce (FIAP Pós Tech - Tech Challenge Fase 2)."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "pandas (>=2.2,<4.0)",
+    "pyarrow (>=17.0,<27.0)",
+    "scikit-learn (>=1.5,<2.0)",
+    "mlflow (>=3.0,<4.0)",
+    "dvc (>=3.50,<4.0)",
+    "pydantic-settings (>=2.4,<3.0)",
+]
+
+[tool.poetry]
+packages = [{ include = "purchase_intention", from = "src" }]
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.3,<10.0"
+ruff = ">=0.15,<0.18"
+ipykernel = ">=7.0,<8.0"   # executa o notebook de EDA no VS Code
+matplotlib = ">=3.9,<4.0"  # gráficos da análise exploratória
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # erros de estilo (pycodestyle)
+    "W",   # avisos de estilo (pycodestyle)
+    "F",   # erros lógicos, como imports não usados (pyflakes)
+    "I",   # ordenação de imports (isort)
+    "N",   # convenções de nomes (pep8-naming)
+    "UP",  # sintaxe moderna do Python (pyupgrade)
+    "B",   # padrões propensos a bugs (flake8-bugbear)
+    "SIM", # simplificações de código (flake8-simplify)
+    "ANN", # type hints obrigatórios
+    "D",   # docstrings obrigatórias
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+# Nos testes, o nome da função já descreve o comportamento esperado.
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"

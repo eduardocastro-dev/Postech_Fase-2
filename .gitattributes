@@ -1,0 +1,21 @@
+# Padrão: o Git detecta arquivos de texto e mantém quebras de linha LF,
+# tanto no repositório quanto na pasta de trabalho. Isso garante que scripts
+# e configurações funcionem igual no Windows e dentro do contêiner Linux.
+* text=auto eol=lf
+
+# Scripts exclusivos do Windows precisam de CRLF.
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Remote do DVC: os arquivos são identificados pelo hash do conteúdo.
+# Qualquer conversão feita pelo Git mudaria o hash e quebraria o dvc pull.
+armazenamento-dvc/** binary
+
+# Dados e artefatos binários nunca devem ser convertidos.
+# O CSV original da UCI usa CRLF: converter mudaria o SHA-256 registrado.
+*.csv binary
+*.parquet binary
+*.joblib binary
+*.pkl binary
+*.png binary
+*.zip binary
