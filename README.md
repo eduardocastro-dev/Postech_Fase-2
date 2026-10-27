@@ -40,6 +40,26 @@ cp .env.example .env   # ajuste os valores se necessário
 
 O arquivo `poetry.toml` configura o ambiente virtual dentro do projeto (`.venv/`).
 
+## Arquitetura de dados (medalhão)
+
+| Camada | Classe | O que faz | Saída |
+| --- | --- | --- | --- |
+| Bronze | `BronzeIngestor` | Copia o CSV original para Parquet, sem alterar valores, e registra origem e SHA-256 | `data/bronze/sessions.parquet`, `metadata.json` |
+| Silver | `SilverTransformer` | Valida o schema, padroniza `Month` e converte códigos em texto; conta duplicatas sem removê-las | `data/silver/sessions.parquet`, `quality_report.json` |
+| Gold | `GoldBuilder` | Converte o alvo para 0/1 e faz o split estratificado (80/20, seed 42) | `data/gold/train.parquet`, `test.parquet` |
+
+As três camadas seguem o mesmo fluxo, definido uma única vez em `LayerProcessor`:
+ler → validar entrada → transformar → validar saída → gravar. Nenhuma estatística é
+aprendida antes do split; escalonamento e codificação ficam no Pipeline do modelo.
+
+Execução manual, a partir da raiz do projeto:
+
+```bash
+poetry run python -m purchase_intention.stages.ingest_bronze
+poetry run python -m purchase_intention.stages.transform_silver
+poetry run python -m purchase_intention.stages.build_gold
+```
+
 ## Qualidade de código
 
 ```bash

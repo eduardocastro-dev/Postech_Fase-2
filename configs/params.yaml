@@ -1,0 +1,19 @@
+# Parâmetros do pipeline. O DVC rastreia este arquivo: qualquer mudança aqui
+# faz o `dvc repro` reexecutar apenas os estágios que dependem do valor alterado.
+
+# Semente única para todos os pontos de aleatoriedade (split, modelos).
+seed: 42
+
+data:
+  source_url: https://archive.ics.uci.edu/static/public/468/online+shoppers+purchasing+intention+dataset.zip
+  raw: data/raw/online_shoppers_intention.csv
+  bronze: data/bronze/sessions.parquet
+  bronze_metadata: data/bronze/metadata.json
+  silver: data/silver/sessions.parquet
+  silver_report: data/silver/quality_report.json
+  gold_train: data/gold/train.parquet
+  gold_test: data/gold/test.parquet
+
+split:
+  # Proporção reservada para a avaliação final do modelo.
+  test_size: 0.2
