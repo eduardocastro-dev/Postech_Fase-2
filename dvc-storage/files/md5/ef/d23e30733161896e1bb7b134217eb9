@@ -1,0 +1,7 @@
+{
+  "rows": 12330,
+  "duplicate_rows": 125,
+  "duplicate_rate": 0.0101,
+  "duplicates_policy": "mantidas (ver notebooks/01_analise_exploratoria.ipynb)",
+  "positive_rate": 0.1547
+}

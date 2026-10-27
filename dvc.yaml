@@ -1,0 +1,52 @@
+# Pipeline medalhão: Bronze -> Silver -> Gold.
+# Os caminhos vêm de configs/params.yaml (fonte única); cada estágio declara
+# apenas o código e os parâmetros que de fato influenciam a sua saída.
+vars:
+  - configs/params.yaml
+
+stages:
+  ingest_bronze:
+    cmd: python -m purchase_intention.stages.ingest_bronze
+    deps:
+      - ${data.raw}
+      - src/purchase_intention/layers/base.py
+      - src/purchase_intention/layers/bronze.py
+      - src/purchase_intention/layers/schema.py
+      - src/purchase_intention/layers/storage.py
+      - src/purchase_intention/stages/ingest_bronze.py
+    params:
+      - configs/params.yaml:
+          - data.source_url
+    outs:
+      - ${data.bronze}
+      - ${data.bronze_metadata}
+
+  transform_silver:
+    cmd: python -m purchase_intention.stages.transform_silver
+    deps:
+      - ${data.bronze}
+      - src/purchase_intention/layers/base.py
+      - src/purchase_intention/layers/schema.py
+      - src/purchase_intention/layers/silver.py
+      - src/purchase_intention/layers/storage.py
+      - src/purchase_intention/stages/transform_silver.py
+    outs:
+      - ${data.silver}
+      - ${data.silver_report}
+
+  build_gold:
+    cmd: python -m purchase_intention.stages.build_gold
+    deps:
+      - ${data.silver}
+      - src/purchase_intention/layers/base.py
+      - src/purchase_intention/layers/gold.py
+      - src/purchase_intention/layers/schema.py
+      - src/purchase_intention/layers/storage.py
+      - src/purchase_intention/stages/build_gold.py
+    params:
+      - configs/params.yaml:
+          - seed
+          - split.test_size
+    outs:
+      - ${data.gold_train}
+      - ${data.gold_test}

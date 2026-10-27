@@ -9,7 +9,7 @@
 
 # Remote do DVC: os arquivos são identificados pelo hash do conteúdo.
 # Qualquer conversão feita pelo Git mudaria o hash e quebraria o dvc pull.
-armazenamento-dvc/** binary
+dvc-storage/** binary
 
 # Dados e artefatos binários nunca devem ser convertidos.
 # O CSV original da UCI usa CRLF: converter mudaria o SHA-256 registrado.

@@ -1,0 +1,118 @@
+schema: '2.0'
+stages:
+  ingest_bronze:
+    cmd: python -m purchase_intention.stages.ingest_bronze
+    deps:
+    - path: data/raw/online_shoppers_intention.csv
+      hash: md5
+      md5: cc6ec1db03b4f10f8de52c56ff48b085
+      size: 1072063
+    - path: src/purchase_intention/layers/base.py
+      hash: md5
+      md5: a9dafec89f4d70140d62522fc2d62610
+      size: 1722
+    - path: src/purchase_intention/layers/bronze.py
+      hash: md5
+      md5: 8c63670398d52b4f9d42adf806afd396
+      size: 3006
+    - path: src/purchase_intention/layers/schema.py
+      hash: md5
+      md5: c3f7393d395a1a5993f882957574cf69
+      size: 4846
+    - path: src/purchase_intention/layers/storage.py
+      hash: md5
+      md5: 78b492f9c5b6131ad017afd144672c4a
+      size: 1093
+    - path: src/purchase_intention/stages/ingest_bronze.py
+      hash: md5
+      md5: e82f69727a26c650cd20ab31f22bee73
+      size: 574
+    params:
+      configs/params.yaml:
+        data.source_url: 
+          https://archive.ics.uci.edu/static/public/468/online+shoppers+purchasing+intention+dataset.zip
+    outs:
+    - path: data/bronze/metadata.json
+      hash: md5
+      md5: ff0848834c929d5b4c5cc505a1b97b1c
+      size: 735
+    - path: data/bronze/sessions.parquet
+      hash: md5
+      md5: f0e560b1c22bc3dff13ffb09ec317142
+      size: 319535
+  transform_silver:
+    cmd: python -m purchase_intention.stages.transform_silver
+    deps:
+    - path: data/bronze/sessions.parquet
+      hash: md5
+      md5: f0e560b1c22bc3dff13ffb09ec317142
+      size: 319535
+    - path: src/purchase_intention/layers/base.py
+      hash: md5
+      md5: a9dafec89f4d70140d62522fc2d62610
+      size: 1722
+    - path: src/purchase_intention/layers/schema.py
+      hash: md5
+      md5: c3f7393d395a1a5993f882957574cf69
+      size: 4846
+    - path: src/purchase_intention/layers/silver.py
+      hash: md5
+      md5: 78b824657091d300840804b55fb2fde8
+      size: 4406
+    - path: src/purchase_intention/layers/storage.py
+      hash: md5
+      md5: 78b492f9c5b6131ad017afd144672c4a
+      size: 1093
+    - path: src/purchase_intention/stages/transform_silver.py
+      hash: md5
+      md5: 7a6c7f18ed30073825d70aa2aba896e8
+      size: 550
+    outs:
+    - path: data/silver/quality_report.json
+      hash: md5
+      md5: efd23e30733161896e1bb7b134217eb9
+      size: 188
+    - path: data/silver/sessions.parquet
+      hash: md5
+      md5: dd447f8fa5501b1c73419b9d4605f69f
+      size: 390781
+  build_gold:
+    cmd: python -m purchase_intention.stages.build_gold
+    deps:
+    - path: data/silver/sessions.parquet
+      hash: md5
+      md5: dd447f8fa5501b1c73419b9d4605f69f
+      size: 390781
+    - path: src/purchase_intention/layers/base.py
+      hash: md5
+      md5: a9dafec89f4d70140d62522fc2d62610
+      size: 1722
+    - path: src/purchase_intention/layers/gold.py
+      hash: md5
+      md5: 270ea0acc7628d8a3daddd430799fa00
+      size: 4545
+    - path: src/purchase_intention/layers/schema.py
+      hash: md5
+      md5: c3f7393d395a1a5993f882957574cf69
+      size: 4846
+    - path: src/purchase_intention/layers/storage.py
+      hash: md5
+      md5: 78b492f9c5b6131ad017afd144672c4a
+      size: 1093
+    - path: src/purchase_intention/stages/build_gold.py
+      hash: md5
+      md5: 7a58e909787ce7951bd3487d40dd7806
+      size: 597
+    params:
+      configs/params.yaml:
+        seed: 42
+        split.test_size: 0.2
+    outs:
+    - path: data/gold/test.parquet
+      hash: md5
+      md5: c8b2fd3af83df7147205c0bb2ddbbf71
+      size: 93949
+    - path: data/gold/train.parquet
+      hash: md5
+      md5: 6476f984caed15c7d119541d3fbd77c7
+      size: 322610

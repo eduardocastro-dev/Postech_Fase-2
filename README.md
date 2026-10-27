@@ -25,6 +25,21 @@ rastreabilidade de experimentos e código limpo.
 A análise exploratória e as decisões de preparação dos dados estão em
 [`notebooks/01_analise_exploratoria.ipynb`](notebooks/01_analise_exploratoria.ipynb).
 
+## Execução rápida (avaliadores)
+
+Os dados já estão versionados no próprio repositório (remote DVC em `dvc-storage/`),
+então não é preciso baixar nada nem configurar credenciais:
+
+```bash
+git clone https://github.com/eduardocastro-dev/Postech_Fase-2.git
+cd Postech_Fase-2
+poetry install
+poetry run dvc repro --pull
+```
+
+O `dvc repro --pull` traz os dados versionados e executa apenas os estágios cujo
+código, dados ou parâmetros tenham mudado.
+
 ## Pré-requisitos
 
 - Python 3.11
@@ -35,7 +50,7 @@ A análise exploratória e as decisões de preparação dos dados estão em
 
 ```bash
 poetry install
-cp .env.example .env   # ajuste os valores se necessário
+cp .env.example .env   # opcional: sem ele, valem os padrões de config.py
 ```
 
 O arquivo `poetry.toml` configura o ambiente virtual dentro do projeto (`.venv/`).
@@ -52,7 +67,23 @@ As três camadas seguem o mesmo fluxo, definido uma única vez em `LayerProcesso
 ler → validar entrada → transformar → validar saída → gravar. Nenhuma estatística é
 aprendida antes do split; escalonamento e codificação ficam no Pipeline do modelo.
 
-Execução manual, a partir da raiz do projeto:
+## Versionamento de dados (DVC)
+
+O pipeline está declarado em `dvc.yaml`, e os hashes de cada entrada e saída
+ficam em `dvc.lock`. Cada estágio declara o código e os parâmetros de que
+depende. Por exemplo, alterar `split.test_size` refaz apenas o Gold.
+
+| Comando | O que faz |
+| --- | --- |
+| `poetry run dvc repro` | Executa os estágios desatualizados |
+| `poetry run dvc dag` | Mostra a ordem dos estágios |
+| `poetry run dvc status` | Indica o que mudou desde a última execução |
+| `poetry run dvc push` | Envia novos dados para o remote `dvc-storage/` |
+
+O CSV bruto é rastreado por `data/raw/online_shoppers_intention.csv.dvc`.
+Os arquivos de `data/` nunca entram no Git diretamente, apenas os ponteiros do DVC.
+
+Cada camada também pode ser executada isoladamente, a partir da raiz do projeto:
 
 ```bash
 poetry run python -m purchase_intention.stages.ingest_bronze
