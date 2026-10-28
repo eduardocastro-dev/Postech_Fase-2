@@ -79,3 +79,19 @@ stages:
       - src/purchase_intention/stages/evaluate.py
     metrics:
       - ${artifacts.metrics}
+
+  # Publica no MLflow. Roda sempre, mas é idempotente: se o modelo (pelo SHA-256)
+  # já estiver no MLflow, nada é gravado. Num clone novo, preenche o MLflow local.
+  register:
+    cmd: python -m purchase_intention.stages.register
+    always_changed: true
+    deps:
+      - ${artifacts.model}
+      - ${artifacts.cv_results}
+      - ${artifacts.metrics}
+      - ${data.bronze_metadata}
+      - ${data.gold_test}
+      - src/purchase_intention/tracking/publisher.py
+      - src/purchase_intention/tracking/registry.py
+      - src/purchase_intention/tracking/runs.py
+      - src/purchase_intention/stages/register.py

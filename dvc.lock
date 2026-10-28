@@ -199,3 +199,42 @@ stages:
       hash: md5
       md5: 113fb6ec86186f7b19f03f163189b9e0
       size: 267
+  register:
+    cmd: python -m purchase_intention.stages.register
+    deps:
+    - path: data/bronze/metadata.json
+      hash: md5
+      md5: 02a2bae87feb266eb567337e5c0b62c4
+      size: 735
+    - path: data/gold/test.parquet
+      hash: md5
+      md5: c8b2fd3af83df7147205c0bb2ddbbf71
+      size: 93949
+    - path: models/model.joblib
+      hash: md5
+      md5: a03a9403c69e58ea84bca9616c3e416e
+      size: 8628242
+    - path: reports/cv_results.json
+      hash: md5
+      md5: 97bc20ab0034d27c154a46e1ee0ca1f9
+      size: 1322
+    - path: reports/metrics.json
+      hash: md5
+      md5: 113fb6ec86186f7b19f03f163189b9e0
+      size: 267
+    - path: src/purchase_intention/stages/register.py
+      hash: md5
+      md5: 84ce9d0a3b3d6952ae347f812e8fec2b
+      size: 1950
+    - path: src/purchase_intention/tracking/publisher.py
+      hash: md5
+      md5: 620d85813b59e25f10aecfc7262341fb
+      size: 5889
+    - path: src/purchase_intention/tracking/registry.py
+      hash: md5
+      md5: 7c9c4dbbeb69c03962e0f3d9665b7d44
+      size: 1902
+    - path: src/purchase_intention/tracking/runs.py
+      hash: md5
+      md5: d6ef17daa3bcac85f12a00f02672c343
+      size: 3876

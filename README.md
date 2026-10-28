@@ -37,8 +37,14 @@ poetry install
 poetry run dvc repro --pull
 ```
 
-O `dvc repro --pull` traz os dados versionados e executa apenas os estágios cujo
-código, dados ou parâmetros tenham mudado.
+O `dvc repro --pull` traz os dados e o modelo versionados, executa apenas os
+estágios cujo código, dados ou parâmetros tenham mudado e publica o modelo no
+MLflow local. Para ver os experimentos e o Model Registry no navegador:
+
+```bash
+poetry run mlflow ui --backend-store-uri sqlite:///mlflow.db
+# abra http://127.0.0.1:5000
+```
 
 ## Pré-requisitos
 
@@ -82,6 +88,32 @@ Os hiperparâmetros ficam em `configs/params.yaml`. O modelo final é gravado em
 Os resultados ficam em `reports/cv_results.json` (seleção) e `reports/metrics.json`
 (teste), e podem ser consultados com `poetry run dvc metrics show`.
 
+## Rastreamento de experimentos (MLflow)
+
+O treino acontece no DVC; o estágio `register` publica no MLflow o que o treino
+produziu. Ele roda em todo `dvc repro`, mas é idempotente: o modelo é
+identificado pelo SHA-256 do arquivo e, se já estiver publicado, nada é gravado.
+Por isso um clone recém-feito preenche o MLflow local sem retreinar.
+
+| Onde | O que fica registrado |
+| --- | --- |
+| Experimento `purchase-intention` | Uma execução `selection-<hash>` por modelo publicado, com seed, dobras, `test_size`, modelo escolhido, limiar e SHA-256 dos dados brutos; métricas `cv_*` do vencedor e `test_*` (incluindo a matriz de confusão); relatórios JSON e o modelo com assinatura e exemplo de entrada |
+| Execuções filhas | Uma por candidato, com hiperparâmetros e média e desvio de cada métrica na validação cruzada |
+| Model Registry `purchase-intention-classifier` | Uma versão por modelo publicado. O alias `champion` vai para a nova versão apenas se o F1 médio de validação dela superar o do campeão atual |
+
+Para carregar o modelo campeão:
+
+```python
+import mlflow
+
+model = mlflow.sklearn.load_model("models:/purchase-intention-classifier@champion")
+```
+
+O modelo é serializado em [skops](https://skops.readthedocs.io/), formato mais
+seguro que o pickle. Os tipos internos que o skops pede para autorizar, como
+as árvores do Random Forest, são liberados apenas para o modelo gerado pelo
+próprio pipeline.
+
 ## Versionamento de dados (DVC)
 
 O pipeline está declarado em `dvc.yaml`, e os hashes de cada entrada e saída
@@ -92,7 +124,7 @@ depende. Por exemplo, alterar `split.test_size` refaz apenas o Gold.
 | --- | --- |
 | `poetry run dvc repro` | Executa os estágios desatualizados |
 | `poetry run dvc dag` | Mostra a ordem dos estágios |
-| `poetry run dvc status` | Indica o que mudou desde a última execução |
+| `poetry run dvc status` | Indica o que mudou desde a última execução (o `register` aparece sempre como alterado, por ser `always_changed`) |
 | `poetry run dvc push` | Envia novos dados para o remote `dvc-storage/` |
 
 O CSV bruto é rastreado por `data/raw/online_shoppers_intention.csv.dvc`.
