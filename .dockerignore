@@ -31,3 +31,8 @@ mlflow.db
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Materiais de desenvolvimento, fora da imagem de execução
+tests/
+notebooks/
+Clean Code para Engenharia de ML/

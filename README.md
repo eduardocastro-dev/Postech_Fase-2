@@ -46,6 +46,36 @@ poetry run mlflow ui --backend-store-uri sqlite:///mlflow.db
 # abra http://127.0.0.1:5000
 ```
 
+## Execução com Docker Compose (Fase 8)
+
+Com Docker Engine e Docker Compose v2 instalados, execute na raiz do projeto:
+
+```bash
+docker compose up --build
+```
+
+O Compose constrói a imagem multi-stage usando o `poetry.lock`, inicia o
+servidor MLflow e aguarda sua verificação de saúde antes de executar o pipeline
+`dvc repro --pull`. O remote do DVC está incluído na imagem: não são
+necessários `.env`, credenciais, instalação local de Python ou Poetry. Na
+primeira execução, o pipeline recupera os artefatos versionados e publica o
+modelo no MLflow. Nas seguintes, a publicação idempotente evita duplicatas.
+
+A interface do MLflow fica em **http://127.0.0.1:5000**. O serviço `pipeline`
+termina após a execução, enquanto `mlflow-server` continua atendendo. Para
+consultar o resultado ou executar novamente:
+
+```bash
+docker compose logs pipeline
+docker compose run --rm pipeline
+docker compose down
+```
+
+O SQLite, os modelos registrados e os artefatos do MLflow persistem no volume
+nomeado `mlflow-data`, mesmo após `docker compose down`. Para apagar
+**definitivamente** esse estado de execução local, use `docker compose down -v`.
+O servidor publica a porta apenas no localhost da máquina, não na rede externa.
+
 ## Pré-requisitos
 
 - Python 3.11

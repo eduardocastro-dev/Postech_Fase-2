@@ -1,0 +1,53 @@
+# Orquestração da Fase 8: servidor de tracking e pipeline DVC.
+# Nenhum arquivo .env ou serviço externo é necessário.
+services:
+  mlflow-server:
+    build:
+      context: .
+    image: purchase-intention:phase8
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --workers
+      - "1"
+      - --backend-store-uri
+      - sqlite:////var/lib/mlflow/mlflow.db
+      - --serve-artifacts
+      - --artifacts-destination
+      - /var/lib/mlflow/artifacts
+      - --allowed-hosts
+      - mlflow-server:5000,localhost:5000,127.0.0.1:5000
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - mlflow-data:/var/lib/mlflow
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=5)"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    restart: unless-stopped
+
+  pipeline:
+    build:
+      context: .
+    image: purchase-intention:phase8
+    depends_on:
+      mlflow-server:
+        condition: service_healthy
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow-server:5000
+    command: ["dvc", "repro", "--pull"]
+    restart: "no"
+
+volumes:
+  mlflow-data:
