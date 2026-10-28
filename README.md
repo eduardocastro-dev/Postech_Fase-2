@@ -2,8 +2,6 @@
 
 Tech Challenge — Fase 2 · FIAP Pós Tech (Machine Learning Engineering)
 
-> Documento em construção: será completado ao longo das etapas do projeto.
-
 ## Contexto
 
 Uma empresa de e-commerce precisa identificar a **propensão de compra** de seus
@@ -25,6 +23,48 @@ rastreabilidade de experimentos e código limpo.
 A análise exploratória e as decisões de preparação dos dados estão em
 [`notebooks/01_analise_exploratoria.ipynb`](notebooks/01_analise_exploratoria.ipynb).
 
+## Resultados do modelo
+
+O conjunto original contém **12.330 sessões**, das quais **15,47%** terminaram
+em compra. A divisão estratificada (seed 42) reservou **9.864 sessões para
+seleção/treinamento** e **2.466 para avaliação final**. Os dados do teste não
+participaram da escolha do modelo nem do ajuste do limiar de classificação.
+
+Três classificadores com pesos de classe balanceados foram comparados por
+**validação cruzada estratificada de cinco dobras**, exclusivamente no treino.
+O critério principal foi o F1 médio da classe positiva (`Revenue = 1`).
+
+| Modelo candidato | F1 médio (± desvio) | ROC-AUC média | Precisão média | Recall médio |
+| --- | ---: | ---: | ---: | ---: |
+| **Random Forest (selecionado)** | **0,6789 ± 0,0164** | **0,9303** | 0,5961 | 0,7896 |
+| HistGradientBoosting | 0,6697 ± 0,0132 | 0,9274 | 0,6038 | 0,7529 |
+| Regressão Logística | 0,6558 ± 0,0175 | 0,9197 | 0,5553 | 0,8014 |
+
+O limiar foi otimizado com previsões *out-of-fold* do vencedor e fixado em
+**0,586776**, sem consulta ao conjunto de teste.
+
+**Avaliação final no teste (2.466 sessões):**
+
+| Métrica | Valor |
+| --- | ---: |
+| **F1 da classe compra** | **0,6617** |
+| **ROC-AUC** | **0,9236** |
+| Acurácia | 0,8905 |
+| Precisão (compra) | 0,6346 |
+| Recall (compra) | 0,6911 |
+
+Matriz de confusão (linhas = classe real; colunas = predição):
+
+| Classe real | Previsto sem compra | Previsto compra |
+| --- | ---: | ---: |
+| Sem compra (`Revenue = 0`) | 1.932 (VN) | 152 (FP) |
+| Compra (`Revenue = 1`) | 118 (FN) | 264 (VP) |
+
+**Fonte dos resultados:** `reports/cv_results.json` e `reports/metrics.json`,
+ambos versionados no DVC e referenciados por `dvc.lock`. Os valores foram
+extraídos dos artefatos deste release, não de uma execução hipotética.
+O notebook exploratório documenta as decisões de preparação dos dados.
+
 ## Execução rápida (avaliadores)
 
 Os dados já estão versionados no próprio repositório (remote DVC em `dvc-storage/`),
@@ -45,6 +85,55 @@ MLflow local. Para ver os experimentos e o Model Registry no navegador:
 poetry run mlflow ui --backend-store-uri sqlite:///mlflow.db
 # abra http://127.0.0.1:5000
 ```
+
+## Validação da entrega em clone limpo (Fase 9)
+
+Após enviar o commit final para o GitHub, execute **na pasta do projeto local**:
+
+```bash
+python scripts/validate_clean_clone.py
+```
+
+Requisitos: acesso à internet para clonar, Git, Python 3.11 e Poetry 2.x
+instalados no computador que inicia a validação. O script usa **um diretório
+temporário independente**, sem reaproveitar `.venv`, `.env`, `mlflow.db`, dados
+ou modelos da sua cópia de trabalho. Ele:
+
+1. Clona a branch `main` diretamente do GitHub.
+2. Instala as dependências do `poetry.lock` e executa Ruff e pytest.
+3. Executa `dvc repro --pull`, recuperando os artefatos do remote local.
+4. Confere o SHA-256 do CSV bruto e os resultados versionados no DVC.
+5. Executa o DVC novamente e verifica que o Registry tem **uma versão** com
+   alias `champion`, cujas previsões coincidem com as do modelo do DVC.
+6. Exibe as métricas do DVC e remove o clone temporário ao concluir.
+
+Para verificar um **commit local antes do push**, execute:
+
+```bash
+python scripts/validate_clean_clone.py --repository .
+```
+
+Para inspecionar a pasta gerada, acrescente `--keep`. Também é possível usar
+`--repository CAMINHO_OU_URL` e `--branch NOME` para validar outro repositório
+ou branch. **O script valida apenas o que estiver commitado na origem**:
+modificações não commitadas não entram no clone, e o comando padrão valida
+o que já estiver publicado no GitHub.
+
+Depois de uma publicação bem-sucedida, `register` pode aparecer como alterado
+em `dvc status`: isso é esperado por causa de `always_changed`. O mecanismo de
+idempotência evita adicionar versões duplicadas ao Registry.
+
+A validação com Docker depende do Docker Engine instalado no computador:
+
+```bash
+docker compose config
+docker compose up --build
+# Em outro terminal:
+docker compose logs pipeline
+```
+
+A interface deve estar disponível em `http://127.0.0.1:5000`. Para encerrar:
+`docker compose down` (mantém o volume do MLflow).
 
 ## Execução com Docker Compose (Fase 8)
 
@@ -148,7 +237,8 @@ próprio pipeline.
 
 O pipeline está declarado em `dvc.yaml`, e os hashes de cada entrada e saída
 ficam em `dvc.lock`. Cada estágio declara o código e os parâmetros de que
-depende. Por exemplo, alterar `split.test_size` refaz apenas o Gold.
+depende. Por exemplo, alterar `split.test_size` refaz a camada Gold e os estágios
+posteriores, sem refazer Bronze ou Silver.
 
 | Comando | O que faz |
 | --- | --- |
@@ -167,6 +257,35 @@ poetry run python -m purchase_intention.stages.ingest_bronze
 poetry run python -m purchase_intention.stages.transform_silver
 poetry run python -m purchase_intention.stages.build_gold
 ```
+
+## Limitações e decisões técnicas
+
+- **Possível vazamento temporal em `PageValues`:** o indicador do Google
+  Analytics tem forte relação com conversões e pode incorporar informação
+  associada a compras. Ele foi mantido conforme o dataset e o estudo original,
+  mas a aplicação em tempo real exige comprovar que seu valor esteja disponível
+  **antes** da decisão de compra. Sem essa garantia, as métricas podem ser
+  otimistas; recomenda-se avaliar um modelo sem essa variável.
+- **Desbalanceamento:** apenas 15,47% das sessões são positivas. Por isso
+  utilizamos split estratificado, `class_weight="balanced"`, F1 da classe
+  positiva e ajuste do limiar. Precisão e recall dependem da taxa de compra
+  observada e podem mudar em outros períodos ou lojas.
+- **Duplicatas preservadas:** as **125 linhas duplicadas (1,01%)** foram
+  mantidas por representarem padrões de sessões sem compra. Registros com
+  características idênticas podem aparecer nos dois conjuntos, o que limita
+  a interpretação da avaliação como generalização para usuários inéditos.
+- **Cobertura incompleta das categorias:** janeiro e abril não aparecem nos
+  dados disponíveis. `OneHotEncoder(handle_unknown="ignore")` permite receber
+  categorias desconhecidas, mas não fornece evidência de desempenho para elas.
+- **Treino e validação:** hiperparâmetros fixos, sem busca automatizada;
+  avaliação em um único split estratificado, sem teste temporal ou validação
+  externa. O modelo não foi validado em tráfego de produção.
+- **Infraestrutura de demonstração:** o remote DVC fica no próprio repositório
+  para dispensar credenciais, e o MLflow do Compose usa SQLite em volume
+  persistente e acesso localhost. Em produção, seriam recomendados storage
+  externo, autenticação, observabilidade e políticas de retenção.
+- **Escopo da entrega:** não inclui deploy em nuvem nem Kubernetes, que não
+  são requisitos obrigatórios do Tech Challenge.
 
 ## Qualidade de código
 

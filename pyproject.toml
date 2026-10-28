@@ -56,5 +56,6 @@ convention = "google"
 "tests/**" = ["D"]
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
