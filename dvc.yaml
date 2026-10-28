@@ -50,3 +50,32 @@ stages:
     outs:
       - ${data.gold_train}
       - ${data.gold_test}
+
+  train:
+    cmd: python -m purchase_intention.stages.train
+    deps:
+      - ${data.gold_train}
+      - src/purchase_intention/modeling/artifacts.py
+      - src/purchase_intention/modeling/candidates.py
+      - src/purchase_intention/modeling/preprocessing.py
+      - src/purchase_intention/modeling/selection.py
+      - src/purchase_intention/modeling/training.py
+      - src/purchase_intention/stages/train.py
+    params:
+      - configs/params.yaml:
+          - seed
+          - train
+    outs:
+      - ${artifacts.model}
+      - ${artifacts.cv_results}
+
+  evaluate:
+    cmd: python -m purchase_intention.stages.evaluate
+    deps:
+      - ${data.gold_test}
+      - ${artifacts.model}
+      - src/purchase_intention/modeling/evaluation.py
+      - src/purchase_intention/modeling/preprocessing.py
+      - src/purchase_intention/stages/evaluate.py
+    metrics:
+      - ${artifacts.metrics}

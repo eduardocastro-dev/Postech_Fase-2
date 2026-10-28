@@ -43,7 +43,7 @@ def test_stage_command_points_to_existing_module(name: str) -> None:
 @pytest.mark.parametrize("name", list(STAGES))
 def test_stage_paths_exist_or_come_from_params(name: str) -> None:
     stage = STAGES[name]
-    for path in [*stage["deps"], *stage["outs"]]:
+    for path in [*stage["deps"], *stage.get("outs", []), *stage.get("metrics", [])]:
         match = VARIABLE.match(path)
         if match:
             # Dados não existem num clone recém-feito: basta a chave ser válida.

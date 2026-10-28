@@ -36,6 +36,14 @@ def test_rejects_test_size_outside_open_interval(
         load_params(path)
 
 
+def test_rejects_cross_validation_with_less_than_two_folds(tmp_path: Path) -> None:
+    content = yaml.safe_load(PROJECT_PARAMS.read_text(encoding="utf-8"))
+    path = _write_params(tmp_path, train={**content["train"], "cv_folds": 1})
+
+    with pytest.raises(ValidationError, match="cv_folds"):
+        load_params(path)
+
+
 def test_rejects_unknown_keys(tmp_path: Path) -> None:
     # Pega erros de digitação, como "sed" em vez de "seed".
     path = _write_params(tmp_path, sed=1)

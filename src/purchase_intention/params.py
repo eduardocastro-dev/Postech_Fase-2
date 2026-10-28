@@ -37,12 +37,32 @@ class SplitParams(_StrictModel):
     test_size: float = Field(gt=0, lt=1)
 
 
+HyperparameterValue = bool | int | float | str | None
+
+
+class TrainParams(_StrictModel):
+    """Validação cruzada e hiperparâmetros dos modelos candidatos."""
+
+    cv_folds: int = Field(ge=2)
+    models: dict[str, dict[str, HyperparameterValue]] = Field(min_length=1)
+
+
+class ArtifactParams(_StrictModel):
+    """Caminhos do modelo treinado e dos relatórios de métricas."""
+
+    model: Path
+    cv_results: Path
+    metrics: Path
+
+
 class PipelineParams(_StrictModel):
     """Conjunto completo de parâmetros do pipeline."""
 
     seed: int
     data: DataParams
     split: SplitParams
+    train: TrainParams
+    artifacts: ArtifactParams
 
 
 def load_params(path: Path = DEFAULT_PARAMS_PATH) -> PipelineParams:

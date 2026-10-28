@@ -67,6 +67,21 @@ As três camadas seguem o mesmo fluxo, definido uma única vez em `LayerProcesso
 ler → validar entrada → transformar → validar saída → gravar. Nenhuma estatística é
 aprendida antes do split; escalonamento e codificação ficam no Pipeline do modelo.
 
+## Modelagem
+
+| Etapa | Como é feita |
+| --- | --- |
+| Pré-processamento | `log1p` + `StandardScaler` em contagens e durações, `StandardScaler` nas taxas, `OneHotEncoder` nas categóricas. Tudo dentro do `Pipeline`, ajustado só nos dados de treino de cada dobra |
+| Candidatos | `LogisticRegression`, `RandomForestClassifier` e `HistGradientBoostingClassifier`, todos com `class_weight="balanced"` |
+| Seleção | Validação cruzada estratificada (5 dobras) no treino: maior F1 médio da classe positiva; a ROC-AUC desempata |
+| Limiar de decisão | Escolhido para maximizar o F1 nas previsões *out-of-fold* do vencedor, sem usar o teste |
+| Avaliação final | Uma única vez no conjunto de teste: F1, ROC-AUC, acurácia, precisão, recall e matriz de confusão |
+
+Os hiperparâmetros ficam em `configs/params.yaml`. O modelo final é gravado em
+`models/model.joblib`, com o limiar já embutido (`FixedThresholdClassifier`).
+Os resultados ficam em `reports/cv_results.json` (seleção) e `reports/metrics.json`
+(teste), e podem ser consultados com `poetry run dvc metrics show`.
+
 ## Versionamento de dados (DVC)
 
 O pipeline está declarado em `dvc.yaml`, e os hashes de cada entrada e saída

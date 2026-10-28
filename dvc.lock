@@ -34,7 +34,7 @@ stages:
     outs:
     - path: data/bronze/metadata.json
       hash: md5
-      md5: ff0848834c929d5b4c5cc505a1b97b1c
+      md5: 02a2bae87feb266eb567337e5c0b62c4
       size: 735
     - path: data/bronze/sessions.parquet
       hash: md5
@@ -116,3 +116,86 @@ stages:
       hash: md5
       md5: 6476f984caed15c7d119541d3fbd77c7
       size: 322610
+  train:
+    cmd: python -m purchase_intention.stages.train
+    deps:
+    - path: data/gold/train.parquet
+      hash: md5
+      md5: 6476f984caed15c7d119541d3fbd77c7
+      size: 322610
+    - path: src/purchase_intention/modeling/artifacts.py
+      hash: md5
+      md5: 12111b41a700c20f72cbece0c65dc2ef
+      size: 697
+    - path: src/purchase_intention/modeling/candidates.py
+      hash: md5
+      md5: 13fc17b7dec1f2465f1a9e5da8b5874b
+      size: 1789
+    - path: src/purchase_intention/modeling/preprocessing.py
+      hash: md5
+      md5: 0d8c0a98f478d90377cc99d03580e2fa
+      size: 1909
+    - path: src/purchase_intention/modeling/selection.py
+      hash: md5
+      md5: 1b2886c9faf783edf14a498ca924c1fd
+      size: 3233
+    - path: src/purchase_intention/modeling/training.py
+      hash: md5
+      md5: 200b1447a2b8d951455a858c7aeff9c0
+      size: 2514
+    - path: src/purchase_intention/stages/train.py
+      hash: md5
+      md5: 5de3096e758cf1f5a21335dc29fdfe59
+      size: 1097
+    params:
+      configs/params.yaml:
+        seed: 42
+        train:
+          cv_folds: 5
+          models:
+            logistic_regression:
+              C: 1.0
+              max_iter: 1000
+            random_forest:
+              n_estimators: 300
+              min_samples_leaf: 2
+            hist_gradient_boosting:
+              learning_rate: 0.05
+              max_iter: 300
+    outs:
+    - path: models/model.joblib
+      hash: md5
+      md5: a03a9403c69e58ea84bca9616c3e416e
+      size: 8628242
+    - path: reports/cv_results.json
+      hash: md5
+      md5: 97bc20ab0034d27c154a46e1ee0ca1f9
+      size: 1322
+  evaluate:
+    cmd: python -m purchase_intention.stages.evaluate
+    deps:
+    - path: data/gold/test.parquet
+      hash: md5
+      md5: c8b2fd3af83df7147205c0bb2ddbbf71
+      size: 93949
+    - path: models/model.joblib
+      hash: md5
+      md5: a03a9403c69e58ea84bca9616c3e416e
+      size: 8628242
+    - path: src/purchase_intention/modeling/evaluation.py
+      hash: md5
+      md5: 4aac16c264e32988f2b7ca424c48bd7a
+      size: 1407
+    - path: src/purchase_intention/modeling/preprocessing.py
+      hash: md5
+      md5: 0d8c0a98f478d90377cc99d03580e2fa
+      size: 1909
+    - path: src/purchase_intention/stages/evaluate.py
+      hash: md5
+      md5: 7b5f04dc01f70e597792703eb61bc5bb
+      size: 1038
+    outs:
+    - path: reports/metrics.json
+      hash: md5
+      md5: 113fb6ec86186f7b19f03f163189b9e0
+      size: 267

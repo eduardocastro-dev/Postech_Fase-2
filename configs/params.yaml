@@ -17,3 +17,24 @@ data:
 split:
   # Proporção reservada para a avaliação final do modelo.
   test_size: 0.2
+
+train:
+  # Dobras da validação cruzada estratificada usada na seleção do modelo.
+  cv_folds: 5
+  # Hiperparâmetros fixos de cada candidato. class_weight e random_state são
+  # definidos no código, iguais para todos.
+  models:
+    logistic_regression:
+      C: 1.0
+      max_iter: 1000
+    random_forest:
+      n_estimators: 300
+      min_samples_leaf: 2
+    hist_gradient_boosting:
+      learning_rate: 0.05
+      max_iter: 300
+
+artifacts:
+  model: models/model.joblib
+  cv_results: reports/cv_results.json
+  metrics: reports/metrics.json

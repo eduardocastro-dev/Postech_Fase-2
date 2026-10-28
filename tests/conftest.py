@@ -6,7 +6,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from purchase_intention.layers.schema import RAW_COLUMNS
+from purchase_intention.layers.schema import RAW_COLUMNS, TARGET
+from purchase_intention.layers.silver import SilverTransformer
+from purchase_intention.params import TrainParams
 
 N_ROWS = 200
 POSITIVE_RATE = 0.2
@@ -58,6 +60,26 @@ def make_raw_sessions(n_rows: int = N_ROWS, seed: int = 0) -> pd.DataFrame:
 @pytest.fixture
 def raw_sessions() -> pd.DataFrame:
     return make_raw_sessions()
+
+
+@pytest.fixture
+def gold_sessions(raw_sessions: pd.DataFrame, tmp_path: Path) -> pd.DataFrame:
+    # Mesmo formato que os modelos recebem no pipeline real: Silver + alvo 0/1.
+    transformer = SilverTransformer(tmp_path / "in", tmp_path / "out", tmp_path / "r")
+    return transformer.transform(raw_sessions).astype({TARGET: int})
+
+
+@pytest.fixture
+def small_train_params() -> TrainParams:
+    # Modelos pequenos para os testes rodarem em poucos segundos.
+    return TrainParams(
+        cv_folds=3,
+        models={
+            "logistic_regression": {"max_iter": 500},
+            "random_forest": {"n_estimators": 10},
+            "hist_gradient_boosting": {"max_iter": 10},
+        },
+    )
 
 
 @pytest.fixture
