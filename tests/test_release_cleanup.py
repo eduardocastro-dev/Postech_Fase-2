@@ -5,7 +5,6 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-
 from scripts.validate_clean_clone import (
     _retry_readonly_removal,
     cleanup_temporary_directory,

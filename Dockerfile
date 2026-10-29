@@ -46,4 +46,7 @@ COPY --chown=app:app src/ ./src/
 
 USER app
 
+# A pasta .git fica fora da imagem, então o DVC precisa trabalhar sem Git.
+RUN dvc config --local core.no_scm true
+
 CMD ["dvc", "repro", "--pull"]

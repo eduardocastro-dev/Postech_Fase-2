@@ -150,6 +150,13 @@ necessários `.env`, credenciais, instalação local de Python ou Poetry. Na
 primeira execução, o pipeline recupera os artefatos versionados e publica o
 modelo no MLflow. Nas seguintes, a publicação idempotente evita duplicatas.
 
+Os dois serviços usam a mesma imagem, construída uma única vez pelo
+`mlflow-server`; o `pipeline` apenas a reutiliza (`pull_policy: never`). Por
+isso o `docker compose run --rm pipeline` exige que a imagem já tenha sido
+construída pelo `docker compose up --build`. A pasta `.git` não entra na
+imagem, e o DVC é configurado no build para trabalhar sem Git
+(`core.no_scm`).
+
 A interface do MLflow fica em **http://127.0.0.1:5000**. O serviço `pipeline`
 termina após a execução, enquanto `mlflow-server` continua atendendo. Para
 consultar o resultado ou executar novamente:

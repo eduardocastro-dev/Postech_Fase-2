@@ -38,9 +38,10 @@ services:
     restart: unless-stopped
 
   pipeline:
-    build:
-      context: .
+    # Reutiliza a imagem construída pelo mlflow-server: construir as duas em
+    # paralelo com a mesma tag faz um dos builds falhar.
     image: purchase-intention:phase8
+    pull_policy: never
     depends_on:
       mlflow-server:
         condition: service_healthy
